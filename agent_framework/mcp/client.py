@@ -1,26 +1,31 @@
-from typing import List, Any, Optional
+from __future__ import annotations
+
+from typing import Any, Dict, List, Optional
+
 from langchain_core.tools import BaseTool
-from agent_framework.tools.registry import LocalToolRegistry
+
+from agent_framework.tools.registry import ToolRegistry
+
 
 class MCPClient:
-    """
-    A client for interacting with Model Context Protocol (MCP) servers.
-    Currently, it uses a LocalToolRegistry as a mock server.
-    """
-    def __init__(self, registry: Optional[LocalToolRegistry] = None):
-        """
-        Initialize the MCP Client.
-        
-        Args:
-            registry: A LocalToolRegistry instance acting as a mock server.
-                      If not provided, a new empty registry is created.
-        """
-        self.registry = registry or LocalToolRegistry()
+    def __init__(self, registry: Optional[ToolRegistry] = None) -> None:
+        self._tools: Dict[str, BaseTool] = {}
+        if registry is not None:
+            for tool_name in registry.names():
+                self._tools[tool_name] = registry.get_base_tool(tool_name)
+
+    def register_tool(self, tool: BaseTool) -> None:
+        self._tools[tool.name] = tool
+
+    def list_tools(self) -> List[BaseTool]:
+        return list(self._tools.values())
 
     def get_tools(self) -> List[BaseTool]:
-        """Get tools from the MCP server (registry)."""
-        return self.registry.get_tools()
+        return self.list_tools()
 
-    def execute_tool(self, name: str, args: Any) -> Any:
-        """Execute a tool on the MCP server (registry)."""
-        return self.registry.execute_tool(name, args)
+    def call_tool(self, name: str, payload: Dict[str, Any]) -> Any:
+        tool = self._tools[name]
+        return tool.invoke(payload)
+
+    def execute_tool(self, name: str, payload: Dict[str, Any]) -> Any:
+        return self.call_tool(name, payload)

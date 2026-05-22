@@ -1,0 +1,10 @@
+name: builtin-core
+version: "0.1.0"
+entrypoint: agent_framework.plugins.builtin
+enabled: true
+provides:
+  - tools
+  - skills
+  - memory_backends
+compat:
+  framework: agent-framework
